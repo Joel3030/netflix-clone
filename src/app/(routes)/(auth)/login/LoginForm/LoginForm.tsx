@@ -1,20 +1,24 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button } from '@/components/ui/button';
 import {
 	Form,
 	FormControl,
 	FormField,
 	FormItem,
 	FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+	Input,
+	Button,
+} from '@/components/ui';
+
 import { FormError } from './FormError';
+
+import { login } from '@/actions/auth';
 
 const formSchema = z.object({
 	email: z.string().email('Please enter a valid email').min(1, {
@@ -26,7 +30,9 @@ const formSchema = z.object({
 });
 
 export const LoginForm = () => {
-	const [error, setError] = useState('');
+	const [errorMessage, setErrorMessage] = useState('');
+
+	const router = useRouter();
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -36,14 +42,21 @@ export const LoginForm = () => {
 		},
 	});
 
-	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		setError('');
-		console.log(values);
+	const onSubmit = async (values: z.infer<typeof formSchema>) => {
+		setErrorMessage('');
+		const { message, status } = await login(values);
+
+		if (status === 'error') {
+			setErrorMessage(message);
+			return;
+		}
+
+		router.push('/profiles');
 	};
 
 	return (
 		<Form {...form}>
-			<FormError message={error} />
+			<FormError message={errorMessage} />
 
 			<form
 				onSubmit={form.handleSubmit(onSubmit)}
